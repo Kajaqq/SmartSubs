@@ -9,15 +9,18 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, MessagesState, StateGraph
-
-load_dotenv()
+########################################################
+#
+model_name = 'gemini-2.5-flash-preview-05-20'
 
 system_message = '''Input: Podcast with Japanese language and multiple speakers.
 Podcast topic: The podcast topic is a mobile game called 学園アイドルマスター (Gakuen Idolmaster)
-Output Format: proper .srt file with speaker names
+Output Format: .srt file with speaker names
 Guidelines: Analyze the audio file, detect the speaker names, and transcribe. If a speaker name cannot be detected, use numbers instead. Follow industry standards for subtitle length. Create accurate timestamps.'''
+#########################################################
+load_dotenv()
 
-model = init_chat_model("gemini-2.5-flash-preview-05-20", model_provider="google_genai", temperature=0)
+model = init_chat_model(model=model_name, model_provider="google_genai", temperature=0, audio_timestamp=True)
 
 workflow = StateGraph(state_schema=MessagesState)
 
@@ -69,7 +72,7 @@ def save_to_srt(transcript_data, filename="transcript"):
     print(f"Transcript saved to {filename}")
 
 
-async def transcribe(audio_file, translate, language='English'):
+async def transcribe(audio_file, translate, language):
     filename = pathlib.Path(audio_file).stem
     lang_suffix = language.lower().replace(' ', '_')
     try:
@@ -100,7 +103,7 @@ async def transcribe(audio_file, translate, language='English'):
 
         if translate:
             print("\nStarting translation...")
-            query2 = f"Translate the above content to {language}"
+            query2 = f"Translate the above content to {language}, output a .srt file with speaker names."
             messages.append(HumanMessage(content=query2))
 
             print("Translation: ", end="", flush=True)
@@ -147,4 +150,4 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Run transcription with provided arguments
-    asyncio.run(transcribe(args.file, args.language, args.translate))
+    asyncio.run(transcribe(args.file, args.translate, args.language))

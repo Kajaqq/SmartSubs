@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Generates original and translated subtitles from a given audio file."
 requires-python = ">=3.12"
 dependencies = [
+    "av>=14.4.0",
     "dotenv>=0.9.9",
     "google-genai>=1.20.0",
     "langchain[google-genai]>=0.3.25",

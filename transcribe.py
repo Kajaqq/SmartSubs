@@ -9,6 +9,8 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, MessagesState, StateGraph
+
+from video_split import detect_video, get_output_path, extract_audio
 ########################################################
 #
 model_name = 'gemini-2.5-flash-preview-05-20'
@@ -48,6 +50,14 @@ memory = MemorySaver()
 app = workflow.compile(checkpointer=memory)
 config = RunnableConfig(configurable={"thread_id": "gakumasu-club"})
 
+def prepare_file(file_path):
+    if not detect_video(file_path):
+        return file_path
+    input_video = file_path
+    output_audio = get_output_path(input_video)
+    print(f"Video detected, extracting audio to '{output_audio}'...")
+    extract_audio(input_video, output_audio)
+    return output_audio
 
 async def upload_audio(audio_file):
     client = genai.Client()
@@ -59,7 +69,6 @@ async def upload_audio(audio_file):
     mime_type = myfile_data.mime_type
     audio_message = HumanMessage(content=[{"type": "media", "file_uri": audio_uri, "mime_type": mime_type}])
     return audio_message
-
 
 def save_to_srt(transcript_data, filename="transcript"):
     filename = filename + '.srt'
@@ -76,6 +85,7 @@ async def transcribe(audio_file, translate, language):
     filename = pathlib.Path(audio_file).stem
     lang_suffix = language.lower().replace(' ', '_')
     try:
+        audio_file = prepare_file(audio_file)
         audio_msg = await upload_audio(audio_file)
         messages = [
             SystemMessage(content=system_message),
@@ -83,7 +93,7 @@ async def transcribe(audio_file, translate, language):
         ]
 
         print('Starting transcription...')
-        print("AI Response: ", end="", flush=True)
+        print("Transcription: ", end="", flush=True)
 
         full_response = ""
         chunk_count = 0
@@ -94,11 +104,10 @@ async def transcribe(audio_file, translate, language):
                 full_response += chunk.content
                 chunk_count += 1
 
-                # Add periodic progress indicator
                 if chunk_count % 50 == 0:
                     print(" ⏳", end="", flush=True)
 
-        print(f"\nTranscription complete! ({chunk_count} chunks received)")
+        print(f"\nTranscription complete!")
         save_to_srt(full_response, filename)
 
         if translate:
@@ -119,7 +128,7 @@ async def transcribe(audio_file, translate, language):
                     if chunk_count % 30 == 0:
                         print(" ⏳", end="", flush=True)
 
-            print(f"\nTranslation complete! ({chunk_count} chunks received)")
+            print(f"\nTranslation complete!")
             save_to_srt(translation_response, f"{filename}_{lang_suffix}")
         else:
             print("\nTranslation skipped")

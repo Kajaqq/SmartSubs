@@ -1,7 +1,7 @@
 # Smart Subtitle Generator
 
-An AI-powered tool for transcribing audio files to SRT subtitles with speaker detection and translation capabilities.
-
+An AI-powered tool for transcribing video/audio files to SRT subtitles with speaker detection and translation capabilities
+- For video files, it automatically extracts the first audio track with no re-encoding done.
 ## Setup
 
 1. Clone this repository
@@ -25,7 +25,7 @@ uv run transcribe.py path/to/audio_file.mp3 --no-translate
 
 ## Arguments
 
-- `file`: Path to the audio file to transcribe (required)
+- `file`: Path to the video/audio file to transcribe (required)
 - `--language`, `-l`: Target language for translation (default: English)
 - `--no-translate`, `-n`: Disable translation (translation is enabled by default)
 
@@ -39,4 +39,4 @@ The script generates two files:
 
 - Python 3.10+
 - Google API key with access to Gemini models
-- Audio file in [a supported format](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/audio-understanding) (MP3, WAV, etc.) 
+- Audio or video file in [a supported format](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/audio-understanding) (MP3, WAV, etc.) 

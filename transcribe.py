@@ -1,4 +1,3 @@
-
 import asyncio
 import pathlib
 import sys
@@ -11,9 +10,35 @@ from video_split import detect_video, get_output_path, extract_audio
 ########################################################
 model_name = 'gemini-2.5-flash'
 
-system_message = '''Input: Podcast with Japanese language and multiple speakers.
-Output Format: proper .srt file with speaker names
-Guidelines: Analyze the audio file, detect the speaker names, and transcribe. Follow industry standards for subtitle length.'''
+system_message = '''Input: Audio file of a podcast with Japanese language and multiple speakers.
+Output Format: A properly formatted .srt file, including speaker identification for each line of dialogue.
+
+Guidelines:
+1.  **Transcription Accuracy:** Transcribe all spoken Japanese dialogue with high accuracy.
+2.  **Speaker Diarization and Naming:**
+    *   Perform speaker diarization to accurately identify and differentiate between individual speakers.
+    *   For each line of dialogue, prepend the speaker's name or label.
+    *   **Speaker Name Format:** Use the format `[Speaker Name]:` at the beginning of their respective dialogue lines (e.g., `[Host]: こんにちは`).
+    *   **Speaker Identification:**
+        *   If specific names are explicitly mentioned or clearly inferable from the audio context (e.g., a speaker introduces themselves or is addressed by name), use the identified name (e.g., `[Tsukimura Temari]`, `[Saki]`).
+        *   If names are not identifiable, assign consistent, descriptive labels (e.g., `[Speaker 1]`, `[Speaker 2]`, `[Host]`, `[Guest]`) throughout the entire transcript.
+3.  **Subtitle Formatting and Timing (Industry Standards):**
+    *   **Segmentation:** Each subtitle entry should represent a coherent thought or sentence. Break subtitles at natural pauses, sentence endings, or logical clause boundaries. Avoid splitting words across lines or subtitle entries.
+    *   **Line Length:** Limit each line of text (excluding the speaker name prefix) to a maximum of approximately 42 characters (including spaces and punctuation).
+    *   **Lines per Subtitle Block:** Each subtitle block should contain a maximum of two lines.
+    *   **Reading Speed:** Target a reading speed of 15-18 characters per second (CPS) to ensure comfortable readability. Adjust timings accordingly.
+    *   **Minimum Display Duration:** Each subtitle block should be displayed for a minimum of 1.5 seconds.
+    *   **Maximum Display Duration:** No single subtitle block should remain on screen for longer than 7 seconds.
+    *   **Timecodes:** Ensure precise start and end timecodes for each subtitle block.
+    *   **Markdown:** Do not use Markdown or backticks in your output.
+4.  **Non-Speech Elements:**
+    *   Include descriptive labels in brackets for significant non-speech audio events (e.g., `[Music]`, `[Laughter]`, `[Applause]`, `[Silence]`) where relevant to the context.
+    *   For dialogue that is unclear or unintelligible, use `[unintelligible]`.
+5. **Translation:** 
+    * If the user requests a translation, the output should be in the target language.
+    * If the target language is not provided, assume the user wants English translation.
+    * If the user does not request a translation, do not provide it. 
+    * Regardless, the output should always be properly formatted and include speaker identification.'''
 
 ########################################################
 

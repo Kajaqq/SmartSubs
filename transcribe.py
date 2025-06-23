@@ -76,6 +76,65 @@ async def save_to_srt(transcript_data, filename="transcript"):
                 f.write(line)
     print(f"Transcript saved to {filename}")
 
+def get_warning_message(con_count: int = 0, task_type: str = "Transcription"):
+        msg = f'''
+        {'\n' + '=' * 24}
+        \nWARNING: {task_type} may be incomplete, as a token limit was reached {con_count} time(s)
+        \n{'=' * 24}
+        '''
+        return msg
+
+def is_response_truncated(finish_reason: str = ""):
+    """
+    Check the finish reason to detect possible truncation.
+    """
+    truncated_finish_reasons = ['MAX_TOKENS', 'SAFETY', 'BLOCKLIST', 'PROHIBITED_CONTENT']
+    if finish_reason in truncated_finish_reasons:
+        return True
+    else:
+        return False
+
+async def get_complete_response(messages, max_continuations=10):
+    """
+    Detection of truncation and automatic continuation.
+    """
+    complete_response = ""
+    continuation_count = 0
+    
+    while continuation_count <= max_continuations:
+        print(f"\n--- Getting response (attempt {continuation_count + 1}) ---")
+        
+        current_response = ""
+        finish_reason = ""
+        async for chunk in model.astream(messages):
+            if hasattr(chunk, 'content') and chunk.content:
+                print(chunk.content, end="", flush=True)
+                current_response += chunk.content
+            if hasattr(chunk, 'response_metadata') and chunk.response_metadata:
+                if 'finish_reason' in chunk.response_metadata:
+                    finish_reason = chunk.response_metadata['finish_reason']
+
+        complete_response += current_response
+
+        # Check the response finish reason for eventual continuation.
+        if not is_response_truncated(finish_reason) or continuation_count >= max_continuations:
+            break
+
+        # Add continuation prompt
+        print(f"\n\n[Detected truncated response, requesting continuation...]")
+        continuation_count += 1
+
+        # Add the current response to conversation history and request continuation
+        messages.append(HumanMessage(content=current_response))
+        messages.append(HumanMessage(content="Continue from where you left off. Continue the transcription/translation exactly where it was cut off."))
+
+    if continuation_count > max_continuations:
+        print(f"\n[Warning: Reached maximum continuation attempts ({max_continuations}). Response may still be incomplete.]")
+
+    return complete_response, continuation_count
+
+
+
 async def transcribe(audio_file, translate, language, sys_msg=system_message):
     filename = pathlib.Path(audio_file).stem
     lang_suffix = language.lower().replace(' ', '_')
@@ -90,36 +149,32 @@ async def transcribe(audio_file, translate, language, sys_msg=system_message):
         print('Starting transcription...')
         print("Transcription: ")
 
-        full_response = ""
-
-        async for chunk in model.astream(messages):
-            if hasattr(chunk, 'content') and chunk.content:
-                print(chunk.content, end="", flush=True)
-                full_response += chunk.content
-
+        # Get a complete response with automatic continuation
+        full_response, con_count = await get_complete_response(messages.copy())
+        if con_count > 0:
+            print(get_warning_message(con_count))
         print(f"\nTranscription complete!")
+
         await save_to_srt(full_response, filename)
 
         if translate:
             print("\nStarting translation...")
             query2 = f"Translate the above content to {language}, output a proper .srt file."
-            messages.append(HumanMessage(content=query2))
+            translation_messages = messages + [HumanMessage(content=query2)]
 
             print("Translation: ")
-            translation_response = ""
-
-            async for chunk in model.astream(messages):
-                if hasattr(chunk, 'content') and chunk.content:
-                    print(chunk.content, end="", flush=True)
-                    translation_response += chunk.content
-
+            
+            # Get a complete translation response with automatic continuation
+            translation_response, con_count = await get_complete_response(translation_messages)
+            if con_count > 0:
+                print(get_warning_message(con_count, "Translation"))
             print(f"\nTranslation complete!")
             await save_to_srt(translation_response, f"{filename}_{lang_suffix}")
         else:
             print("\nTranslation skipped")
 
     except Exception as e:
-        print(f"Error during transcription: {e}")
+        print("An error occurred during transcription: ", e)
 
 if __name__ == "__main__":
     import argparse

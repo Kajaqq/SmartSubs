@@ -1,4 +1,4 @@
-# Smart Subtitle Generator
+# SmartSubs - AI-enhanced Subtitle Generator
 
 An AI-powered tool for transcribing video/audio files to SRT subtitles with speaker detection and translation capabilities
 - For video files, it automatically extracts the first audio track with no re-encoding done.
@@ -6,7 +6,7 @@ An AI-powered tool for transcribing video/audio files to SRT subtitles with spea
 
 1. Clone this repository
 2. [Install uv package manager on your machine](https://docs.astral.sh/uv/getting-started/installation/)
-3. Copy `.env.example` to `.env` and add your Google API key
+3. Copy `.env.example` to `.env` and add your Google AI API key
 
 ## Usage
 
@@ -14,13 +14,13 @@ An AI-powered tool for transcribing video/audio files to SRT subtitles with spea
 # uv run makes sure that all the dependencies are installed correctly
 
 # Basic usage (transcribes and translates to English by default)
-uv run transcribe.py path/to/audio_file.mp3
+uv run main.py path/to/audio_file.mp3
 
 # Specify a different translation language
-uv run transcribe.py path/to/audio_file.mp3 --language Spanish
+uv run main.py path/to/audio_file.mp3 --language Spanish
 
 # Disable translation
-uv run transcribe.py path/to/audio_file.mp3 --no-translate
+uv run main.py path/to/audio_file.mp3 --no-translate
 ```
 
 ## Arguments
@@ -39,4 +39,4 @@ The script generates two files:
 
 - Python 3.10+
 - Google API key with access to Gemini models
-- Audio or video file in [a supported format](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/audio-understanding) (MP3, WAV, etc.) 
+- Audio or video file in [a supported format](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/audio-understanding) 

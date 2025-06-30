@@ -80,8 +80,7 @@ class AudioTranscriber:
         return init_chat_model(
             model=self.config.model_name,
             model_provider="google_genai",
-            temperature=self.config.temperature,
-            max_tokens=3000
+            temperature=self.config.temperature
         )
     
     @staticmethod

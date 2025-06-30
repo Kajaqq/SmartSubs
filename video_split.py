@@ -1,6 +1,5 @@
 from av import open
 from pathlib import PurePath
-
 extension_map = {
     'aac': 'aac',
     'mp3': 'mp3',
@@ -11,6 +10,7 @@ extension_map = {
     'pcm_s16le': 'wav'
 }
 
+
 # noinspection PyInconsistentReturns
 def detect_video(file_path):
     with open(file_path, 'r') as container:
@@ -18,6 +18,7 @@ def detect_video(file_path):
             return True
         else:
             return False
+
 
 def get_audio_codec(video_path):
     with open(video_path, 'r') as container:
@@ -28,8 +29,10 @@ def get_audio_codec(video_path):
     codec_name = codec_context.name
     return codec_name
 
+
 def get_output_extension(codec_name):
     return extension_map.get(codec_name, codec_name)
+
 
 def get_output_path(video_path):
     audio_codec = get_audio_codec(video_path)
@@ -38,16 +41,17 @@ def get_output_path(video_path):
     output_path = str(output_path_object)
     return output_path
 
+
 def extract_audio(video_path, audio_path):
     print(f"Extracting audio to '{audio_path}'...")
     try:
-        input_container  = open(video_path, 'r')
+        input_container = open(video_path, 'r')
         output_container = open(audio_path, 'w')
         input_stream = input_container.streams.audio[0]
         output_stream = output_container.add_stream_from_template(input_stream)
         for packet in input_container.demux(input_stream):
             if packet.dts is None:
-                    continue
+                continue
             packet.stream = output_stream
             output_container.mux(packet)
         input_container.close()
